@@ -41,6 +41,20 @@
 
 #define VERSION "1.0.0 alpha 1"
 
+/*
+// Sniper Shields, Soldier shoes, DemoMan shoes
+#define RAZORBACK	57
+#define DARWIN		231
+#define COZYCAMPER	642
+#define GUNBOATS	133
+#define MANNTREADS	444
+#define BOOTIES		405
+#define BOOTLEGGER	608
+
+// Razorback, Darwin's Danger Shield, Cozy Camper, Gunboats, Manntreads, Ali Baba's Wee Booties, Bootlegger
+new g_SpecialWearableIndexes = { RAZORBACK, DARWIN, COZYCAMPER, GUNBOATS, MANNTREADS, BOOTIES, BOOTLEGGER };
+*/
+
 new Handle:g_Cvar_Enabled;
 
 new bool:g_bWhitelist = false;
@@ -51,16 +65,16 @@ new Handle:g_hDenyIndexList;
 // new Handle:g_hReplaceStuff;
 
 new bool:g_bActionItems = true;
-new bool:g_bSpecialWearables = true;
 new bool:g_bBuildings = true;
 new bool:g_AllowedBuildings[4];
 
+// These are only the tf_wearable item indexes
 new g_ActionItemIndexes[] = { 167, 241, 280, 281, 282, 283, 284, 286, 288, 362, 364, 365, 438, 463, 477, 493, 542, 1015 };
-new g_Spellbooks[] = { 1069, 1070, 5604 };
-new g_Canteens[] = { 489, 30015 };
+//new g_Spellbooks[] = { 1069, 1070, 5604 };
+//new g_Canteens[] = { 489, 30015 };
 
 new Handle:hGameConf;
-new Handle:hEquipWearable;
+//new Handle:hEquipWearable;
 new Handle:hRemoveWearable;
 
 public Plugin:myinfo = {
@@ -100,11 +114,13 @@ public OnPluginStart()
 	
 	hGameConf = LoadGameConfigFile("equipwearable");
 	
+	/*
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameConf, SDKConf_Virtual, "EquipWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
 	hEquipWearable = EndPrepSDKCall();
-	
+	*/
+
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameConf, SDKConf_Virtual, "RemoveWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
@@ -160,16 +176,7 @@ public Event_Inventory(Handle:event, const String:name[], bool:dontBroadcast)
 				continue;
 			}
 			
-			new itemIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-			
-			for (new i = 0; i < sizeof(g_Canteens); i++)
-			{
-				if (g_Canteens[i] == itemIndex)
-				{
-					SDKCall(hRemoveWearable, client, entity);
-					break;
-				}
-			}
+			SDKCall(hRemoveWearable, client, entity);
 		}
 		
 		entity = -1;
@@ -183,16 +190,16 @@ public Event_Inventory(Handle:event, const String:name[], bool:dontBroadcast)
 				continue;
 			}
 			
-			new itemIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
-			
-			for (new i = 0; i < sizeof(g_Spellbooks); i++)
+			/*
+			// Since this is a CBaseCombatWeapon, remove its wearable if present, then the item
+			new wearable = GetEntPropEnt(entity, Prop_Send, "m_hExtraWearable");
+			if (wearable != -1)
 			{
-				if (g_Spellbooks[i] == itemIndex)
-				{
-					RemovePlayerItem(client, entity);
-					break;
-				}
+				SDKCall(hRemoveWearable, client, wearable);
 			}
+			*/
+			
+			RemovePlayerItem(client, entity);
 		}		
 	}
 }
@@ -208,8 +215,34 @@ public OnEntityCreated(entity, const String:classname[])
 	{
 		SDKHook(entity, SDKHook_Spawn, BuilderSpawn);
 	}
+	else
+	if (!g_AllowedBuildings[TFObject_Sentry] && StrEqual(classname, "obj_sentrygun"))
+	{
+		SDKHook(entity, SDKHook_Spawn, BlockBuilding);
+	}
+	else
+	if (!g_AllowedBuildings[TFObject_Sentry] && StrEqual(classname, "obj_dispenser"))
+	{
+		SDKHook(entity, SDKHook_Spawn, BlockBuilding);
+	}
+	else
+	if (!g_AllowedBuildings[TFObject_Sentry] && StrEqual(classname, "obj_teleporter"))
+	{
+		SDKHook(entity, SDKHook_Spawn, BlockBuilding);
+	}
 }
 
+/*
+public Action:BlockBuilding(entity)
+{
+	if(IsValidEntity(entity))
+		AcceptEntityInput(entity, "Kill");
+	
+	return Plugin_Continue;	
+}
+ */
+
+// This doesn't actually work on non-bots, but in case Valve fixes it later...
 public Action:BuilderSpawn(entity)
 {
 	new owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
@@ -241,6 +274,7 @@ public Action:BuilderSpawn(entity)
 			}
 		}
 		
+		// Just block the sappers by index instead
 		case TFClass_Spy:
 		{
 			if (!g_AllowedBuildings[TFObject_Sapper])
@@ -249,6 +283,7 @@ public Action:BuilderSpawn(entity)
 			}
 		}
 	}
+	// Have to return continue even though we changed props.
 	return Plugin_Continue;
 }
 
@@ -281,11 +316,10 @@ Change_Restrictions(client, const String:file[])
 	{
 		g_bWhitelist = false;
 		g_bActionItems = true;
-		g_bSpecialWearables = true;
 		g_bBuildings = true;
 		for (new i = 0; i < sizeof(g_AllowedBuildings); i++)
 		{
-			g_AllowedBuildings [i] = true;
+			g_AllowedBuildings[i] = true;
 		}
 		
 		ClearArray(g_hAllowClassList);
@@ -334,7 +368,6 @@ Change_Restrictions(client, const String:file[])
 	
 	g_bActionItems		= bool:KvGetNum(kvRestrictions, "allow_action_items", 1);
 	g_bBuildings		= bool:KvGetNum(kvRestrictions, "allow_buildings", 1);
-	g_bSpecialWearables = bool:KvGetNum(kvRestrictions, "allow_special_wearables", 1);
 	
 	if (g_bBuildings && KvJumpToKey(kvRestrictions, "buildings"))
 	{
@@ -356,8 +389,74 @@ Change_Restrictions(client, const String:file[])
 			decl String:classname[64];
 			KvGetSectionName(kvRestrictions, classname, sizeof(classname));
 			
+			new allow = KvGetNum(kvRestrictions, "allow");
+			new deny = KvGetNum(kvRestrictions, "deny");
+			if (g_bWhitelist)
+			{
+				if (allow && FindStringInArray(g_hAllowClassList, classname) == -1)
+				{
+					PushArrayString(g_hAllowClassList, classname);
+				}
+				else
+				if (deny && FindStringInArray(g_hDenyClassList, classname) == -1)
+				{
+					PushArrayString(g_hDenyClassList, classname);
+				}
+			}
+			else
+			{
+				if (deny && FindStringInArray(g_hDenyClassList, classname) == -1)
+				{
+					PushArrayString(g_hDenyClassList, classname);
+				}
+				else
+				if (allow && FindStringInArray(g_hAllowClassList, classname) == -1)
+				{
+					PushArrayString(g_hAllowClassList, classname);
+				}
+			}
 			
 		} while (KvGotoNextKey(kvRestrictions));
+		
+	}
+	
+	if (KvJumpToKey(kvRestrictions, "indexes") && KvGotoFirstSubKey(kvRestrictions))
+	{
+		do
+		{
+			decl String:sIndex[10];
+			KvGetSectionName(kvRestrictions, sIndex, sizeof(sIndex));
+			new index = StringToInt(sIndex);
+			
+			new allow = KvGetNum(kvRestrictions, "allow");
+			new deny = KvGetNum(kvRestrictions, "deny");
+			if (g_bWhitelist)
+			{
+				if (allow && FindValueInArray(g_hAllowIndexList, index) == -1)
+				{
+					PushArrayCell(g_hAllowIndexList, index);
+				}
+				else
+				if (deny && FindValueInArray(g_hDenyIndexList, index) == -1)
+				{
+					PushArrayCell(g_hDenyIndexList, index);
+				}
+			}
+			else
+			{
+				if (deny && FindValueInArray(g_hDenyIndexList, index) == -1)
+				{
+					PushArrayCell(g_hDenyIndexList, index);
+				}
+				else
+				if (allow && FindValueInArray(g_hAllowIndexList, index) == -1)
+				{
+					PushArrayCell(g_hAllowIndexList, index);
+				}
+			}
+			
+		} while (KvGotoNextKey(kvRestrictions));
+		
 	}
 }
 
@@ -395,14 +494,31 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		bBlocked = true;
 	}
 	else
-	if (FindStringInArray(g_hDenyClassList, classname) != -1 || FindValueInArray(g_hDenyIndexList, iItemDefinitionIndex)  != -1)
 	{
-		bBlocked = true;
-	}
-	else 
-	if (FindStringInArray(g_hAllowClassList, classname) != -1 || FindValueInArray(g_hAllowIndexList, iItemDefinitionIndex)  != -1)
-	{
-		bBlocked = false;
+		// Check classlists first, so that index lists can override
+		// Earlier on, we only added it to one of the allow/deny lists
+		// even if it was listed in both.
+		if (FindStringInArray(g_hDenyClassList, classname) != -1)
+		{
+			bBlocked = true;
+		}
+		else
+		if (FindStringInArray(g_hAllowClassList, classname) != -1)
+		{
+			bBlocked = false;
+		}
+		
+		if (FindValueInArray(g_hDenyIndexList, iItemDefinitionIndex)  != -1)
+		{
+			bBlocked = true;
+		}
+		else
+		if (FindValueInArray(g_hAllowIndexList, iItemDefinitionIndex)  != -1)
+		{
+			bBlocked = false;
+		}
+		
+		// Replace logic should happen in here somewhere, too, but replace is not currently supported
 	}
 	
 	if (bBlocked)
