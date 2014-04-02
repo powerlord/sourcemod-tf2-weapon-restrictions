@@ -316,7 +316,7 @@ public Action:Cmd_WeaponRestrict(client, args)
 	return Plugin_Handled;
 }
 
-Change_Restrictions(client, const String:file[])
+Change_Restrictions(client, String:file[])
 {
 	if (file[0] == '\0' || StrEqual(file, "none", false))
 	{
@@ -466,7 +466,7 @@ Change_Restrictions(client, const String:file[])
 	}
 	
 	Call_StartForward(g_hChangedForward);
-	Call_PushStringEx(file, sizeof(file), SM_PARAM_STRING_UTF8);
+	Call_PushStringEx(file, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8, 0);
 	Call_Finish();
 }
 
@@ -543,10 +543,8 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 
 public Native_SetRestriction(Handle:plugin, numParams)
 {
-	new size;
-	GetNativeStringLength(1, size);
-	decl String:restrictionName[size+1];
-	GetNativeString(1, restrictionName, size+1);
+	decl String:restrictionName[PLATFORM_MAX_PATH];
+	GetNativeString(1, restrictionName, sizeof(restrictionName));
 	
 	Change_Restrictions(0, restrictionName);
 }
