@@ -28,7 +28,7 @@
  * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
  * or <http://www.sourcemod.net/license.php>.
  *
- * Version: $Id$
+ * Version: 1.0.0 alpha 1
  */
 #include <sourcemod>
 #include <sdktools>
@@ -77,6 +77,8 @@ new Handle:hGameConf;
 //new Handle:hEquipWearable;
 new Handle:hRemoveWearable;
 
+new Handle:g_hChangedForward;
+
 public Plugin:myinfo = {
 	name			= "TF2 Weapon Restrictions",
 	author			= "Powerlord",
@@ -94,6 +96,10 @@ public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 		strcopy(error, err_max, "Only supported on TF2");
 		return APLRes_Failure;
 	}
+	
+	CreateNative("TF2WeaponRestrictions_SetRestriction", Native_SetRestriction);
+	RegPluginLibrary("tf2weaponrestrictions");
+	
 	return APLRes_Success;
 }
 
@@ -124,7 +130,9 @@ public OnPluginStart()
 	StartPrepSDKCall(SDKCall_Player);
 	PrepSDKCall_SetFromConf(hGameConf, SDKConf_Virtual, "RemoveWearable");
 	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer);
-	hRemoveWearable = EndPrepSDKCall();	
+	hRemoveWearable = EndPrepSDKCall();
+	
+	g_hChangedForward = CreateGlobalForward("TF2WeaponRestrictions_RestrictionChanged", ET_Ignore, Param_String);
 }
 
 public Event_Inventory(Handle:event, const String:name[], bool:dontBroadcast)
@@ -232,7 +240,6 @@ public OnEntityCreated(entity, const String:classname[])
 	}
 }
 
-/*
 public Action:BlockBuilding(entity)
 {
 	if(IsValidEntity(entity))
@@ -240,7 +247,6 @@ public Action:BlockBuilding(entity)
 	
 	return Plugin_Continue;	
 }
- */
 
 // This doesn't actually work on non-bots, but in case Valve fixes it later...
 public Action:BuilderSpawn(entity)
@@ -458,6 +464,10 @@ Change_Restrictions(client, const String:file[])
 		} while (KvGotoNextKey(kvRestrictions));
 		
 	}
+	
+	Call_StartForward(g_hChangedForward);
+	Call_PushStringEx(file, sizeof(file), SM_PARAM_STRING_UTF8);
+	Call_Finish();
 }
 
 RegeneratePlayers()
@@ -527,4 +537,16 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 	}
 	
 	return Plugin_Continue;
+}
+
+// Natives
+
+public Native_SetRestriction(Handle:plugin, numParams)
+{
+	new size;
+	GetNativeStringLength(1, size);
+	decl String:restrictionName[size+1];
+	GetNativeString(1, restrictionName, size+1);
+	
+	Change_Restrictions(0, restrictionName);
 }
