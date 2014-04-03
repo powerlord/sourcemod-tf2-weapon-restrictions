@@ -468,6 +468,10 @@ Change_Restrictions(client, String:file[])
 	Call_StartForward(g_hChangedForward);
 	Call_PushStringEx(file, PLATFORM_MAX_PATH, SM_PARAM_STRING_UTF8, 0);
 	Call_Finish();
+	
+	RegeneratePlayers();
+	PrintToChatAll("%t", "TWR Loaded Config", name);
+	
 }
 
 RegeneratePlayers()
@@ -476,6 +480,7 @@ RegeneratePlayers()
 	{
 		if (IsClientInGame(client) && IsPlayerAlive(client))
 		{
+			TF2_RemoveAllWeapons(client);
 			TF2_RegeneratePlayer(client);
 		}
 	}
