@@ -28,7 +28,7 @@
  * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
  * or <http://www.sourcemod.net/license.php>.
  *
- * Version: 1.0.0 alpha 1
+ * Version: 1.0.0
  */
 #include <sourcemod>
 #include <sdktools>
@@ -39,7 +39,7 @@
 #include <morecolors>
 #pragma semicolon 1
 
-#define VERSION "1.0.0 alpha 1"
+#define VERSION "1.0.0"
 
 /*
 // Sniper Shields, Soldier shoes, DemoMan shoes
@@ -133,6 +133,12 @@ public OnPluginStart()
 	hRemoveWearable = EndPrepSDKCall();
 	
 	g_hChangedForward = CreateGlobalForward("TF2WeaponRestrictions_RestrictionChanged", ET_Ignore, Param_String);
+	HookConVarChange(g_Cvar_Enabled, CVar_Enabled);
+}
+
+public CVar_Enabled(Handle:convar, const String:oldValue[], const String:newValue[])
+{
+	RegeneratePlayers();
 }
 
 public Event_Inventory(Handle:event, const String:name[], bool:dontBroadcast)
