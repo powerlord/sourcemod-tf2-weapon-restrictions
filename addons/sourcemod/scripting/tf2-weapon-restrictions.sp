@@ -39,7 +39,7 @@
 #include <morecolors>
 #pragma semicolon 1
 
-#define VERSION "1.0.0"
+#define VERSION "1.0.1"
 
 /*
 // Sniper Shields, Soldier shoes, DemoMan shoes
@@ -244,6 +244,84 @@ public OnEntityCreated(entity, const String:classname[])
 	{
 		SDKHook(entity, SDKHook_Spawn, BlockBuilding);
 	}
+	else
+	if (StrContains(classname, "tf_weapon_"))
+	{
+		SDKHook(entity, SDKHook_Spawn, DisguiseWeapon);
+	}
+	else
+	if (StrContains(classname, "tf_wearable"))
+	{
+		SDKHook(entity, SDKHook_Spawn, DisguiseWearable);
+	}
+	
+}
+
+public Action:DisguiseWeapon(entity)
+{
+	if (!IsValidEntity(entity))
+	{
+		return Plugin_Continue;
+	}
+	
+	new owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	if (owner < 1 || owner > MaxClients)
+	{
+		return Plugin_Continue;
+	}
+	
+	if (GetEntProp(entity, Prop_Send, "m_bDisguiseWeapon"))
+	{
+		decl String:classname[64];
+		new iItemDefinitionIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+		if (iItemDefinitionIndex < 0)
+		{
+			// Not a real item
+			return Plugin_Continue;
+		}
+		GetEntityClassname(entity, classname, sizeof(classname));
+		
+		if (IsItemBlocked(classname, iItemDefinitionIndex))
+		{
+			return Plugin_Stop;
+		}
+	}
+	
+	return Plugin_Continue;
+}
+
+public Action:DisguiseWearable(entity)
+{
+	if (!IsValidEntity(entity))
+	{
+		return Plugin_Continue;
+	}
+	
+	new owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+	if (owner < 1 || owner > MaxClients)
+	{
+		return Plugin_Continue;
+	}
+	
+	if (GetEntProp(entity, Prop_Send, "m_bDisguiseWearable"))
+	{
+		decl String:classname[64];
+		new iItemDefinitionIndex = GetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex");
+		if (iItemDefinitionIndex < 0)
+		{
+			// Not a real item, an extra wearable maybe?
+			return Plugin_Continue;
+		}
+		
+		GetEntityClassname(entity, classname, sizeof(classname));
+		
+		if (IsItemBlocked(classname, iItemDefinitionIndex))
+		{
+			return Plugin_Stop;
+		}
+	}
+	
+	return Plugin_Continue;
 }
 
 public Action:BlockBuilding(entity)
@@ -508,6 +586,18 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		return Plugin_Continue;
 	}
 	
+	// Replace logic should happen in here somewhere, too, but replace is not currently supported
+	
+	if (IsItemBlocked(classname, iItemDefinitionIndex))
+	{
+		return Plugin_Stop;
+	}
+	
+	return Plugin_Continue;
+}
+
+bool:IsItemBlocked(const String:classname[], iItemDefinitionIndex)
+{
 	new bool:bBlocked = g_bWhitelist;
 	
 	if (!g_bBuildings && (StrEqual(classname, "tf_weapon_builder") || StrEqual(classname, "tf_weapon_sapper")))
@@ -538,16 +628,9 @@ public Action:TF2Items_OnGiveNamedItem(client, String:classname[], iItemDefiniti
 		{
 			bBlocked = false;
 		}
-		
-		// Replace logic should happen in here somewhere, too, but replace is not currently supported
 	}
 	
-	if (bBlocked)
-	{
-		return Plugin_Stop;
-	}
-	
-	return Plugin_Continue;
+	return bBlocked;
 }
 
 // Natives
