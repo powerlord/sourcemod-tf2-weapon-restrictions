@@ -28,7 +28,7 @@
  * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
  * or <http://www.sourcemod.net/license.php>.
  *
- * Version: 1.0.0
+ * Version: 1.0.1
  */
 #include <sourcemod>
 #include <sdktools>
@@ -84,7 +84,7 @@ public Plugin:myinfo = {
 	author			= "Powerlord",
 	description		= "Restrict TF2 Weapons to specific types or indexes from a config file",
 	version			= VERSION,
-	url				= ""
+	url				= "https://forums.alliedmods.net/showthread.php?t=238130"
 };
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
