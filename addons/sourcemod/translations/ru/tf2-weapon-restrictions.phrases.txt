@@ -1,0 +1,29 @@
+"Phrases"
+{
+	"TWR Command Usage"
+	{
+		"ru"		"Использование: weaponrestrict <имя>.  <name> может быть \"none\" или \"\" чтобы сбросить до стандартного."
+	}
+
+	"TWR Config Not Found"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Не удалось найти конфигурацию: {1}"
+	}
+
+	"TWR Standard"
+	{
+		"ru"		"Стандарт"
+	}
+
+	"TWR Loaded Config"
+	{
+		"#format"	"{1:s}"
+		"ru"		"Загружена конфигурация оружия {1}"
+	}
+
+	"TWR Disabled"
+	{
+		"ru"		"Плагин отключен"
+	}
+}
